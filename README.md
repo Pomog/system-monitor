@@ -1,4 +1,4 @@
-## Vagrantfile is used to run virtual Lunux mashine
+## Vagrantfile is used to run virtual Linux machine
 ```bash
 vagrant up
 ```
