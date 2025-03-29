@@ -1,0 +1,62 @@
+# Vagrantfile
+Vagrant.configure("2") do |config|
+  # Use the official Debian Bullseye (64-bit) box
+  config.vm.box = "debian/bullseye64"
+
+  # Set the VM's hostname
+  config.vm.hostname = "system-monitor"
+
+  # Create a private network (host-only) with a specific IP
+  config.vm.network "private_network", ip: "192.168.56.14"
+
+  # Configure bridged (public) network mode.
+  # Vagrant will prompt you to select a network interface if more than one is available.
+  config.vm.network "public_network"
+
+  # Synced folder: syncs the "shared_folder" directory from your host to "/home/vagrant/shared" on the guest.
+  config.vm.synced_folder "shared_folder", "/home/vagrant/shared", type: "virtualbox"
+  config.vm.synced_folder "shared_admin", "/home/admin/admin-shared", type: "virtualbox"
+
+  # Enable GUI mode for VirtualBox (so you can interact with the desktop environment)
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+    vb.memory = 2048
+    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    vb.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
+  end
+
+  # Provisioning script: installs necessary packages and a GUI
+  config.vm.provision "shell", inline: <<-SHELL
+    # Update package lists
+    echo "Updating package lists..."
+    sudo apt-get update
+
+    # Install SDL2 development package
+    echo "Installing libsdl2-dev..."
+    sudo apt-get install -y libsdl2-dev
+
+    # Install Git and C++ development tools (build-essential includes g++)
+    echo "Installing Git and build-essential..."
+    sudo apt-get install -y git build-essential
+
+    # Install a graphical desktop environment (GNOME)
+    echo "Installing GNOME desktop environment..."
+    sudo apt-get install -y task-gnome-desktop
+
+    # Install Visual Studio Code
+    echo "Installing Visual Studio Code..."
+    # Import Microsoft’s GPG key
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+    sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
+    rm microsoft.gpg
+    # Add the VS Code repository
+    sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+    sudo apt-get update
+    sudo apt-get install -y code
+
+    sudo apt install libsdl2-dev -y
+
+    echo "Provisioning complete!"
+  SHELL
+end
+
